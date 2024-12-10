@@ -1,8 +1,13 @@
 import requests
 import json
 import sys
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+books = []
 
 class Book:
     """
@@ -47,7 +52,7 @@ class Book:
             'ia',
             '_version_',
             'printdisabled_s',
-            'subject', # always duplicates subject_key, which formats more canonically
+            'subject_key',
             'key', # openlibrary attempts to make this work-unique, but many dups exist
             ]
     def __init__(self, canonical_title, canonical_author):
@@ -55,6 +60,8 @@ class Book:
         self.canonical_author = canonical_author
         self.raw_reps = []
         self.canonical_doc = None
+        self.subject_str = None
+        self.subject_embed = None
 
     def add_possible(self, doc):
         self.raw_reps.append(doc)
@@ -65,7 +72,16 @@ class Book:
         for doc in self.raw_reps:
             for key in self.openlibrary_discard_keys:
                 doc.pop(key, None)
+        # eventually we'll actually concatenate the docs / select the one with
+        # the most information - picking a random one is temp stopgap 
         self.canonical_doc = self.raw_reps[0] 
+
+        if 'subject' in self.canonical_doc:
+            self.subject_str = ", ".join(self.canonical_doc['subject'])
+        # print(self.subject_str)
+        if self.subject_str:
+            # scikit-learn expects 2d arrays
+            self.subject_embed = model.encode(self.subject_str).reshape(1, -1)
 
     def __str__(self):
         return f"{self.canonical_title} - {len(self.raw_reps)} possible versions"
@@ -85,14 +101,23 @@ def import_book(title, author):
     escaped_title = title.replace(' ', '+')
     escaped_author = author.replace(' ', '+')
     url = base_url.format(escaped_title, escaped_author)
-    print(url)
     response = requests.get(url)
     data = json.loads(response.text)
     for doc in data['docs']:
         if 'title' in doc:
             book.add_possible(doc)
     book.validate_possibles()
+    books.append(book)
 
     print(book)
+
+def search(query):
+    query_embed = model.encode(query).reshape(1, -1)
+    for book in books:
+        if book.subject_embed is not None:
+            similarity = cosine_similarity(query_embed, book.subject_embed)
+            print(f"{book.canonical_title} - {similarity}")
     
 import_catalog(sys.argv[1])
+print("")
+search(sys.argv[2])
