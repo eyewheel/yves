@@ -3,3 +3,4 @@ pymarc
 ply
 sentence-transformers[onnx-gpu]
 scikit-learn
+jsonpickle

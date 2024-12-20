@@ -4,6 +4,7 @@ import sys
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import OrderedDict
+import jsonpickle
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -108,7 +109,7 @@ def import_book(title, author):
         if 'title' in doc:
             book.add_possible(doc)
     book.validate_possibles()
-    if book.subject_embed:
+    if book.subject_embed is not None:
         books.append(book)
 
     print(book)
@@ -127,6 +128,11 @@ def browse_library():
     print("Welcome to the Infinite Library.")
     while True:
         query = input("What do you seek? ")
+        if query == 'quit':
+            with open('db.json', 'w') as file:
+                file.write(jsonpickle.encode(books))
+            quit()
+
         results = search(query)
         for idx, (book, similarity) in enumerate(results.items()):
             if idx == 0:
@@ -135,8 +141,13 @@ def browse_library():
             elif idx < 4:
                 print(f"Nearby you see a copy of {book.canonical_title}.")
                 print(similarity)
-         
-    
-import_catalog(sys.argv[1])
+
+def load_library(file):
+    with open(file) as f:
+        decode = jsonpickle.decode(f.read())
+    return decode
+
+# import_catalog(sys.argv[1])
+books = load_library('db.json')
 
 browse_library()
