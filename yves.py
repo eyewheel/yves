@@ -147,7 +147,9 @@ def load_library(file):
         decode = jsonpickle.decode(f.read())
     return decode
 
-# import_catalog(sys.argv[1])
-books = load_library('db.json')
+if len(sys.argv) > 1:
+    import_catalog(sys.argv[1])
+else:
+    books = load_library('db.json')
 
 browse_library()
