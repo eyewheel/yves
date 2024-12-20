@@ -3,6 +3,7 @@ import json
 import sys
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from collections import OrderedDict
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -107,17 +108,35 @@ def import_book(title, author):
         if 'title' in doc:
             book.add_possible(doc)
     book.validate_possibles()
-    books.append(book)
+    if book.subject_embed:
+        books.append(book)
 
     print(book)
 
+def similarity(query_embed, book_embed):
+    return cosine_similarity(query_embed, book_embed)
+
 def search(query):
     query_embed = model.encode(query).reshape(1, -1)
-    for book in books:
-        if book.subject_embed is not None:
-            similarity = cosine_similarity(query_embed, book.subject_embed)
-            print(f"{book.canonical_title} - {similarity}")
+    indexed = OrderedDict()
+    for book in sorted(books, key=lambda book: similarity(query_embed, book.subject_embed), reverse=True):
+        indexed[book] = similarity(query_embed, book.subject_embed)
+    return indexed
+
+def browse_library():
+    print("Welcome to the Infinite Library.")
+    while True:
+        query = input("What do you seek? ")
+        results = search(query)
+        for idx, (book, similarity) in enumerate(results.items()):
+            if idx == 0:
+                print(f"You see a copy of {book.canonical_title}.")
+                print(similarity)
+            elif idx < 4:
+                print(f"Nearby you see a copy of {book.canonical_title}.")
+                print(similarity)
+         
     
 import_catalog(sys.argv[1])
-print("")
-search(sys.argv[2])
+
+browse_library()
