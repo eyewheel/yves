@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import OrderedDict
 import jsonpickle
+import numpy as np
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -124,16 +125,46 @@ def search(query):
         indexed[book] = similarity(query_embed, book.subject_embed)
     return indexed
 
+def perturb(query):
+    query_embed = model.encode(query).reshape(1, -1)
+    # (1, 384)
+    rng = np.random.default_rng()
+    
+    # generate a perturbation vector somehow
+    # N of times to perturb
+    for t in range(20):
+        i = rng.integers(384)
+        perturbation = np.zeros([1, 384])
+        perturbation[0][i] += rng.random()
+
+    query_embed += perturbation
+    indexed = OrderedDict()
+    for book in sorted(books, key=lambda book: similarity(query_embed, book.subject_embed), reverse=True):
+        indexed[book] = similarity(query_embed, book.subject_embed)
+    return indexed
+    
+
 def browse_library():
     print("Welcome to the Infinite Library.")
     while True:
         query = input("What do you seek? ")
         if query == 'quit':
-            with open('db.json', 'w') as file:
-                file.write(jsonpickle.encode(books))
+            if len(sys.argv) > 1:
+                with open('db.json', 'w') as file:
+                    file.write(jsonpickle.encode(books))
             quit()
 
         results = search(query)
+        for idx, (book, similarity) in enumerate(results.items()):
+            if idx == 0:
+                print(f"You see a copy of {book.canonical_title}.")
+                print(similarity)
+            elif idx < 4:
+                print(f"Nearby you see a copy of {book.canonical_title}.")
+                print(similarity)
+
+        print('A little further away...')
+        results = perturb(query)
         for idx, (book, similarity) in enumerate(results.items()):
             if idx == 0:
                 print(f"You see a copy of {book.canonical_title}.")
