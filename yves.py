@@ -18,6 +18,6 @@ if len(sys.argv) > 1:
 else:
     Book.load()
 
-# print(json.dumps(Book.canon, indent=4))
+print("embedding library in concept space...")
 Book.embed()
-print(Book.embeds)
+

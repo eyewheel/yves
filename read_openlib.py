@@ -1,6 +1,7 @@
 from sentence_transformers import SentenceTransformer
 import requests
 import json
+from tqdm import tqdm
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -85,7 +86,7 @@ class Book:
 
     @classmethod
     def embed(cls):
-        for uniqid, doc in cls.canon.items():
+        for uniqid, doc in tqdm(cls.canon.items()):
             subject_str = ", ".join(doc['subject'])
             # scikit-learn expects 2d arrays
             subject_embed = model.encode(subject_str).reshape(1, -1)
@@ -105,7 +106,7 @@ def import_catalog(file):
     with open(file, 'r') as f:
         lines = f.read().splitlines()
 
-    for line in lines:
+    for line in tqdm(lines, "importing catalogue"):
         line = line.strip()
         if line:
             title, author = line.split("%%")
@@ -119,7 +120,7 @@ def import_book(title, author):
     response = requests.get(url)
     if response.text:
         data = json.loads(response.text)
-        print(f"looking for {title} by {author} - {len(data['docs'])} possible copies")
+        # print(f"looking for {title} by {author} - {len(data['docs'])} possible copies")
         for doc in data['docs']:
             if 'title' in doc:
                 book.add_possible(doc)
