@@ -18,4 +18,6 @@ if len(sys.argv) > 1:
 else:
     Book.load()
 
-print(json.dumps(Book.canon, indent=4))
+# print(json.dumps(Book.canon, indent=4))
+Book.embed()
+print(Book.embeds)

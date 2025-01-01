@@ -53,6 +53,8 @@ class Book:
             # 'key', # openlibrary attempts to make this work-unique, but many dups exist
             ]
     canon = {}
+    # very slow, calculated at runtime. should replace with vector db
+    embeds = {}
 
     def __init__(self, canonical_title, canonical_author):
         self.canonical_title = canonical_title
@@ -75,18 +77,19 @@ class Book:
         # the most information - picking a random one is temp stopgap
         self.canonical_doc = self.raw_reps[0]
 
-      #  if 'subject' in self.canonical_doc:
-      #      self.subject_str = ", ".join(self.canonical_doc['subject'])
-      #      
-      #  if self.subject_str:
-      #      # scikit-learn expects 2d arrays
-      #      self.subject_embed = model.encode(self.subject_str).reshape(1, -1)
-
         if 'subject' in self.canonical_doc and len(self.canonical_doc['subject']) > 0:
             self.canon[self.canonical_doc['key']] = self.canonical_doc
 
     def __str__(self):
         return f"{self.canonical_title} - {len(self.raw_reps)} possible versions"
+
+    @classmethod
+    def embed(cls):
+        for uniqid, doc in cls.canon.items():
+            subject_str = ", ".join(doc['subject'])
+            # scikit-learn expects 2d arrays
+            subject_embed = model.encode(subject_str).reshape(1, -1)
+            cls.embeds[uniqid] = subject_embed
 
     @classmethod
     def save(cls):
