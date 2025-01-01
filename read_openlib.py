@@ -2,6 +2,7 @@ from sentence_transformers import SentenceTransformer
 import requests
 import json
 from tqdm import tqdm
+import faiss
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -55,7 +56,7 @@ class Book:
             ]
     canon = {}
     # very slow, calculated at runtime. should replace with vector db
-    embeds = {}
+    embeds = faiss.IndexIDMap(faiss.IndexFlatL2(384))
 
     def __init__(self, canonical_title, canonical_author):
         self.canonical_title = canonical_title
@@ -79,7 +80,8 @@ class Book:
         self.canonical_doc = self.raw_reps[0]
 
         if 'subject' in self.canonical_doc and len(self.canonical_doc['subject']) > 0:
-            self.canon[self.canonical_doc['key']] = self.canonical_doc
+            # hashing the openlib key to force unique integer ids
+            self.canon[hash(self.canonical_doc['key'])] = self.canonical_doc
 
     def __str__(self):
         return f"{self.canonical_title} - {len(self.raw_reps)} possible versions"
@@ -90,7 +92,7 @@ class Book:
             subject_str = ", ".join(doc['subject'])
             # scikit-learn expects 2d arrays
             subject_embed = model.encode(subject_str).reshape(1, -1)
-            cls.embeds[uniqid] = subject_embed
+            cls.embeds.add_with_ids(subject_embed, uniqid)
 
     @classmethod
     def save(cls):

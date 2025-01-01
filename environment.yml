@@ -1,0 +1,12 @@
+name: yves
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - requests
+  - sentence-transformers
+  - faiss-gpu
+  - scikit-learn
+  - tqdm
+  - faiss
