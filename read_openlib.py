@@ -120,7 +120,7 @@ def import_book(title, author):
     escaped_author = author.replace(' ', '+')
     url = base_url.format(escaped_title, escaped_author)
     response = requests.get(url)
-    if response.text:
+    if response.text and response.text.strip():
         data = json.loads(response.text)
         # print(f"looking for {title} by {author} - {len(data['docs'])} possible copies")
         for doc in data['docs']:
