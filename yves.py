@@ -6,6 +6,7 @@ import numpy as np
 import atexit
 
 from read_openlib import *
+from concept_clusters import genres
 
 # def save():
  #   Book.save()
@@ -14,4 +15,5 @@ from read_openlib import *
 # atexit.register(save)
 
 import_catalog(sys.argv[1])
-print(Book.canon)
+
+genres()
