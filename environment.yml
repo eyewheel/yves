@@ -9,4 +9,4 @@ dependencies:
   - faiss-gpu
   - scikit-learn
   - tqdm
-  - faiss
+  - pandas

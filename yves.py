@@ -7,17 +7,11 @@ import atexit
 
 from read_openlib import *
 
-def save():
-    Book.save()
+# def save():
+ #   Book.save()
 
 # remembering the library...
-atexit.register(save)
+# atexit.register(save)
 
-if len(sys.argv) > 1:
-    import_catalog(sys.argv[1])
-else:
-    Book.load()
-
-print("embedding library in concept space...")
-Book.embed()
-
+import_catalog(sys.argv[1])
+print(Book.canon)

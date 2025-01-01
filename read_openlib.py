@@ -2,7 +2,7 @@ from sentence_transformers import SentenceTransformer
 import requests
 import json
 from tqdm import tqdm
-import faiss
+import pandas as pd
 
 base_url = "https://openlibrary.org/search.json?title={}&author={}"
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -54,9 +54,8 @@ class Book:
             # temporarily using key as unique id
             # 'key', # openlibrary attempts to make this work-unique, but many dups exist
             ]
-    canon = {}
-    # very slow, calculated at runtime. should replace with vector db
-    embeds = faiss.IndexIDMap(faiss.IndexFlatL2(384))
+
+    canon = []
 
     def __init__(self, canonical_title, canonical_author):
         self.canonical_title = canonical_title
@@ -80,29 +79,16 @@ class Book:
         self.canonical_doc = self.raw_reps[0]
 
         if 'subject' in self.canonical_doc and len(self.canonical_doc['subject']) > 0:
-            # hashing the openlib key to force unique integer ids
-            self.canon[hash(self.canonical_doc['key'])] = self.canonical_doc
+            subject_str = ', '.join(self.canonical_doc['subject'])
+            subject_embed = model.encode(subject_str)
+            self.canon.append({'title': self.canonical_title, 'author': self.canonical_author, 'embed': subject_embed})
 
     def __str__(self):
         return f"{self.canonical_title} - {len(self.raw_reps)} possible versions"
 
     @classmethod
-    def embed(cls):
-        for uniqid, doc in tqdm(cls.canon.items()):
-            subject_str = ", ".join(doc['subject'])
-            # scikit-learn expects 2d arrays
-            subject_embed = model.encode(subject_str).reshape(1, -1)
-            cls.embeds.add_with_ids(subject_embed, uniqid)
-
-    @classmethod
-    def save(cls):
-        with open('db.json', 'w') as f:
-            f.write(json.dumps(cls.canon, indent=4))
-
-    @classmethod
-    def load(cls):
-        with open('db.json') as f:
-            cls.canon = json.loads(f.read())
+    def canonize(cls):
+        cls.canon = pd.DataFrame(cls.canon)
 
 def import_catalog(file):
     with open(file, 'r') as f:
@@ -113,6 +99,8 @@ def import_catalog(file):
         if line:
             title, author = line.split("%%")
             import_book(title, author)
+
+    Book.canonize()
 
 def import_book(title, author):
     book = Book(title, author)
