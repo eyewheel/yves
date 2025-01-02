@@ -16,4 +16,4 @@ from concept_clusters import genres
 
 import_catalog(sys.argv[1])
 
-genres(7)
+genres()

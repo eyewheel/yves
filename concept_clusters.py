@@ -1,13 +1,13 @@
-from sklearn.cluster import KMeans
+from sklearn.cluster import AffinityPropagation
 import pandas as pd
 import numpy as np
 
 from read_openlib import Book
 
-def genres(k):
+def genres():
     book_embeddings = Book.canon['embed'].tolist()
-    kmeans = KMeans(n_clusters = k)
-    clusters = kmeans.fit_predict(book_embeddings)
+    aff_prop = AffinityPropagation()
+    clusters = aff_prop.fit_predict(book_embeddings)
     Book.canon['genre'] = clusters
 
     print(Book.canon.sort_values('genre'))
