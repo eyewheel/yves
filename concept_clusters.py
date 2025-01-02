@@ -4,9 +4,9 @@ import numpy as np
 
 from read_openlib import Book
 
-def genres():
+def genres(k):
     book_embeddings = Book.canon['embed'].tolist()
-    kmeans = KMeans(n_clusters = 4)
+    kmeans = KMeans(n_clusters = k)
     clusters = kmeans.fit_predict(book_embeddings)
     Book.canon['genre'] = clusters
 
