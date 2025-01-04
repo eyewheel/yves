@@ -1,19 +1,17 @@
-import requests
-import json
 import sys
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
-import atexit
 
-from read_openlib import *
-from concept_clusters import genres
+from classes.canon import Canon
+from classes.library import Library
 
-# def save():
- #   Book.save()
+canon = Canon('db.json')
 
-# remembering the library...
-# atexit.register(save)
+if len(sys.argv) > 1:
+    canon.add_catalog(sys.argv[1])
 
-import_catalog(sys.argv[1])
+canon.save('db.json')
 
-genres()
+library = Library(canon)
+
+library.genres()
+
+# library.browse("subject") etc...
