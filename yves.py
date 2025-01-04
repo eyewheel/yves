@@ -11,7 +11,8 @@ if len(sys.argv) > 1:
 canon.save('db.json')
 
 library = Library(canon)
+# library.calculate_genres()
 
-library.genres()
-
-# library.browse("subject") etc...
+while True:
+    query = input('> ')
+    library.browse(query)
